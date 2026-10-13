@@ -13,8 +13,12 @@ ARG NODE_ENV=production
 
 RUN npm_config_target_arch=${TARGETARCH} yarn build:app:docker
 
-FROM nginx:stable-alpine-slim@sha256:2c605dbeab79a6b2a63340474fe58119d0ef95bdc4b1f41df0aa689659b3d13b
+# Non-root nginx: listens on 8080 and writes only to dirs it owns, so it runs
+# on platforms that start containers as an unprivileged user.
+FROM nginxinc/nginx-unprivileged:stable-alpine-slim
 
 COPY --from=build /opt/node_app/excalidraw-app/build /usr/share/nginx/html
 
-HEALTHCHECK CMD wget -q -O /dev/null http://localhost || exit 1
+EXPOSE 8080
+
+HEALTHCHECK CMD wget -q -O /dev/null http://localhost:8080 || exit 1
